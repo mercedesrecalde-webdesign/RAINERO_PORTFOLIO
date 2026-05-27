@@ -239,7 +239,7 @@
 <!-- ============ NAV ============ -->
 <header id="nav">
   <a class="brand" href="#top">
-    <span class="brand-mark" aria-hidden="true">SR</span>
+    <span class="brand-mark" aria-hidden="true">CR</span>
     <span class="bn">Centro Rainero<small>Capacitación Laboral</small></span>
   </a>
   <nav>
@@ -445,7 +445,7 @@
 <footer>
   <div class="wrap">
     <div class="fbrand">
-      <span class="brand-mark" aria-hidden="true">SR</span>
+      <span class="brand-mark" aria-hidden="true">CR</span>
       <div><b>Centro Rainero</b><small>Centro Municipal de Capacitación Laboral Santiago Rainero</small></div>
     </div>
     <div class="spectrum" style="width:120px"><span class="s1"></span><span class="s2"></span><span class="s3"></span><span class="s4"></span></div>
@@ -514,6 +514,67 @@
     requestAnimationFrame(step);
   })},{threshold:.6});
   document.querySelectorAll('[data-count]').forEach(e=>cio.observe(e));
+
+  /* ---------- CONFETTI on "Gracias" ---------- */
+  (function(){
+    const colors=['#16A0B6','#6FB22B','#5E2585','#B12D8C','#D8431B','#F7C9DF','#ffffff'];
+    let canvas,ctx,particles=[],raf=null;
+    function setup(){
+      canvas=document.createElement('canvas');
+      canvas.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999';
+      document.body.appendChild(canvas);
+      ctx=canvas.getContext('2d');
+      const resize=()=>{canvas.width=innerWidth;canvas.height=innerHeight;};
+      resize(); addEventListener('resize',resize);
+    }
+    function part(x,y,vx,vy){
+      return{x,y,vx,vy,g:.16,fr:.995,rot:Math.random()*Math.PI*2,
+        vrot:(Math.random()-.5)*.2,size:Math.random()*8+5,
+        color:colors[Math.floor(Math.random()*colors.length)],
+        shape:Math.random()<.55?'rect':'circle',life:320+Math.random()*120};
+    }
+    function burst(n=160){
+      if(!canvas)setup();
+      const cx=innerWidth/2, cy=innerHeight*.5;
+      // central burst
+      for(let i=0;i<n;i++){
+        const a=Math.random()*Math.PI*2, s=Math.random()*6+2;
+        particles.push(part(cx,cy,Math.cos(a)*s,Math.sin(a)*s-3));
+      }
+      // side cannons
+      for(let i=0;i<40;i++){
+        particles.push(part(0,innerHeight*.55+Math.random()*120, Math.random()*6+2, -Math.random()*5-2));
+        particles.push(part(innerWidth,innerHeight*.55+Math.random()*120, -Math.random()*6-2, -Math.random()*5-2));
+      }
+      if(!raf)tick();
+    }
+    function tick(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      particles=particles.filter(p=>p.life>0 && p.y<canvas.height+60);
+      for(const p of particles){
+        p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.vx*=p.fr; p.rot+=p.vrot; p.life--;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+        ctx.fillStyle=p.color; ctx.globalAlpha=Math.min(1,p.life/70);
+        if(p.shape==='rect') ctx.fillRect(-p.size/2,-p.size/3,p.size,p.size*.55);
+        else { ctx.beginPath(); ctx.arc(0,0,p.size/2,0,Math.PI*2); ctx.fill(); }
+        ctx.restore();
+      }
+      if(particles.length) raf=requestAnimationFrame(tick);
+      else { raf=null; ctx.clearRect(0,0,canvas.width,canvas.height); }
+    }
+    // dispara cuando "Gracias" entra en viewport (con cooldown de 4s)
+    let last=0;
+    const closing=document.getElementById('cierre');
+    if(closing){
+      new IntersectionObserver((es)=>{es.forEach(e=>{
+        if(e.isIntersecting && Date.now()-last>4000){ last=Date.now(); burst(160); }
+      })},{threshold:.35}).observe(closing);
+    }
+    // refuerzo: si clickean cualquier botón "Celebremos juntos", asegurar el burst al llegar
+    document.querySelectorAll('a[href="#cierre"], a[href="#top"].btn-coral').forEach(a=>{
+      a.addEventListener('click',()=>{ setTimeout(()=>burst(160), 900); });
+    });
+  })();
 </script>
 </body>
 </html>
